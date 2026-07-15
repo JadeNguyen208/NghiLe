@@ -2,6 +2,26 @@ function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 function formatDate(iso){if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return iso; return d.toLocaleDateString('vi-VN');}
 function normalize(s){return (s||'').toLocaleLowerCase('vi');}
 
+function extractTitle(text){
+  const lines = (text||'').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const stripDeco = l => l
+    .replace(/["*_]/g,'')
+    .replace(/^[\u{1F300}-\u{1FAFF}☀-➿←-⇿✀-➿\s]+/gu,'')
+    .replace(/[\u{1F300}-\u{1FAFF}☀-➿←-⇿✀-➿\s]+$/gu,'')
+    .replace(/^[\-–—\s]+|[\-–—\s]+$/g,'')
+    .trim();
+  for(const raw of lines){
+    const l = stripDeco(raw);
+    if(!l) continue;
+    if(/^\(?(LỜI NHẮC|NHẮC LỊCH)\)?$/i.test(l)) continue;
+    if(/^[-=_.]{3,}$/.test(l)) continue;
+    if(l.length < 6) continue;
+    return l.length > 90 ? l.slice(0,90).trim()+'…' : l;
+  }
+  const fallback = (text||'').replace(/\s+/g,' ').trim();
+  return fallback.length > 60 ? fallback.slice(0,60)+'…' : fallback;
+}
+
 const ICONS = {
   check:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
   alert:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><circle cx="12" cy="16.3" r="0.6" fill="currentColor" stroke="none"/></svg>',
@@ -306,13 +326,31 @@ function renderReminders(){
   const { ld } = todayLunar();
   const lunarOnes = state.reminders.filter(r => r.dayType === 'lunar').sort((a,b)=>a.lunarDay-b.lunarDay);
   const specialOnes = state.reminders.filter(r => r.dayType === 'special');
+  const allOrdered = lunarOnes.concat(specialOnes);
+
+  const summaryRows = allOrdered.map(r => {
+    const isToday = r.dayType==='lunar' && r.lunarDay===ld;
+    const dayLabel = r.dayType==='lunar' ? String(r.lunarDay) : escapeHtml(r.specialLabel);
+    return `<tr class="${isToday?'today-row':''}">
+      <td class="day-col">${dayLabel}</td>
+      <td><a class="sheet-link" href="#rem-${r.id}">${escapeHtml(extractTitle(r.noiDung))}</a></td>
+      <td>${r.phuTrach ? `<b class="rem-phutrach">${escapeHtml(r.phuTrach)}</b>` : ''}</td>
+    </tr>`;
+  }).join('');
+
+  const summaryTable = `<div class="rem-summary">
+    <table class="sheet-table">
+      <thead><tr><th>Ngày</th><th>Tiêu đề</th><th>Phụ trách</th></tr></thead>
+      <tbody>${summaryRows}</tbody>
+    </table>
+  </div>`;
 
   function card(r){
     const isToday = r.dayType==='lunar' && r.lunarDay===ld;
-    return `<div class="rem-card" style="${isToday?'border-color:var(--maroon);':''}">
+    return `<div class="rem-card" id="rem-${r.id}" style="${isToday?'border-color:var(--maroon);':''}">
       <div class="rem-meta">
         <span>${r.dayType==='lunar' ? 'Ngày '+r.lunarDay+' âm lịch'+(isToday?' — Hôm nay':'') : escapeHtml(r.specialLabel)}</span>
-        ${r.phuTrach ? `<span>Phụ trách: ${escapeHtml(r.phuTrach)}</span>` : ''}
+        ${r.phuTrach ? `<span>Phụ trách: <b class="rem-phutrach">${escapeHtml(r.phuTrach)}</b></span>` : ''}
       </div>
       <div class="rem-body">${linkify(escapeHtml(r.noiDung))}</div>
       ${r.luuY ? `<div class="rem-note">${escapeHtml(r.luuY)}</div>` : ''}
@@ -322,7 +360,7 @@ function renderReminders(){
     </div>`;
   }
 
-  let html = '';
+  let html = summaryTable;
   const grouped = {};
   lunarOnes.forEach(r => { (grouped[r.lunarDay] = grouped[r.lunarDay]||[]).push(r); });
   Object.keys(grouped).map(Number).sort((a,b)=>a-b).forEach(day => {

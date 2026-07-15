@@ -237,6 +237,21 @@ form.entry-form{background:var(--surface);border:1px solid var(--border);border-
 .today-banner .tb-title{font-weight:700;font-size:.86rem;color:var(--maroon);margin-bottom:2px;}
 .today-banner .tb-sub{font-size:.78rem;color:var(--maroon);opacity:.85;}
 
+.rem-summary{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin-bottom:1.6rem;background:var(--surface);}
+.sheet-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.sheet-table th{
+  background:var(--surface-alt);color:var(--ink-soft);text-transform:uppercase;font-size:.66rem;
+  letter-spacing:.05em;font-weight:700;text-align:left;padding:9px 14px;border-bottom:1px solid var(--border);
+}
+.sheet-table td{padding:8px 14px;border-bottom:1px solid var(--border-soft);vertical-align:top;color:var(--ink);}
+.sheet-table tr:last-child td{border-bottom:none;}
+.sheet-table tbody tr:hover td{background:var(--surface-alt);}
+.sheet-table tr.today-row td{background:var(--maroon-tint);}
+.sheet-table td.day-col{font-variant-numeric:tabular-nums;font-weight:700;color:var(--maroon);white-space:nowrap;width:64px;}
+.sheet-table a.sheet-link{color:var(--ink);text-decoration:none;}
+.sheet-table a.sheet-link:hover{color:var(--maroon);text-decoration:underline;}
+.rem-phutrach{color:var(--maroon);font-weight:700;}
+
 .rem-group-header{display:flex;align-items:baseline;gap:.6rem;margin:1.7rem 0 .8rem;}
 .rem-group-header:first-child{margin-top:0;}
 .rem-group-header h2{font-weight:800;font-size:.9rem;color:var(--maroon);margin:0;white-space:nowrap;}
