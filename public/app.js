@@ -2,6 +2,14 @@ function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 function formatDate(iso){if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return iso; return d.toLocaleDateString('vi-VN');}
 function normalize(s){return (s||'').toLocaleLowerCase('vi');}
 
+function highlightText(escapedText, query){
+  if(!query || !query.trim()) return escapedText;
+  const esc = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if(!esc) return escapedText;
+  const re = new RegExp('('+esc+')', 'gi');
+  return escapedText.replace(re, '<mark class="hl">$1</mark>');
+}
+
 function extractTitle(text){
   const lines = (text||'').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const stripDeco = l => l
@@ -237,9 +245,9 @@ function renderArchive(){
           </div>
           <span class="pill ${answered?'ok':'warn'}">${answered?ICONS.check+' Đã hướng dẫn':ICONS.alert+' Chưa cập nhật phản hồi'}</span>
         </div>
-        ${e.cauHoi ? `<div class="qa-block"><div class="qa-label">Câu hỏi</div><div class="cau-hoi-txt">${escapeHtml(e.cauHoi)}</div></div>` : ''}
-        <div class="qa-block"><div class="qa-label">Nội dung</div><div class="noi-dung-txt">${escapeHtml(e.noiDung)}</div></div>
-        <div class="qa-block"><div class="qa-label">Trả lời</div><div class="tra-loi-txt ${answered?'':'empty'}">${answered?escapeHtml(e.traLoi):'Chưa cập nhật phản hồi.'}</div></div>
+        ${e.cauHoi ? `<div class="qa-block"><div class="qa-label">Câu hỏi</div><div class="cau-hoi-txt">${highlightText(escapeHtml(e.cauHoi), state.query)}</div></div>` : ''}
+        <div class="qa-block"><div class="qa-label">Nội dung</div><div class="noi-dung-txt">${highlightText(escapeHtml(e.noiDung), state.query)}</div></div>
+        <div class="qa-block"><div class="qa-label">Trả lời</div><div class="tra-loi-txt ${answered?'':'empty'}">${answered?highlightText(escapeHtml(e.traLoi), state.query):'Chưa cập nhật phản hồi.'}</div></div>
         <div class="card-actions">
           <button class="act-edit" data-edit="${e.id}">${ICONS.edit} Sửa</button>
           ${!answered ? `<button class="act-answer" data-quickanswer="${e.id}">${ICONS.reply} Cập nhật phản hồi</button>` : ''}

@@ -172,6 +172,7 @@ button,input,textarea,select{font-family:var(--font);}
 .noi-dung-txt{white-space:pre-wrap;font-size:.88rem;line-height:1.7;background:var(--surface-alt);border-left:3px solid var(--gold);padding:.7rem .85rem;border-radius:0 8px 8px 0;color:var(--ink);}
 .tra-loi-txt{white-space:pre-wrap;font-size:.88rem;line-height:1.7;background:var(--green-tint);border-left:3px solid var(--green);padding:.7rem .85rem;border-radius:0 8px 8px 0;color:var(--ink);}
 .tra-loi-txt.empty{background:var(--red-tint);border-left:3px solid var(--red);color:var(--red);font-style:italic;font-size:.84rem;}
+mark.hl{background:var(--gold);color:var(--maroon-deep);border-radius:3px;padding:0 2px;font-weight:700;}
 
 .card-actions{display:flex;gap:1rem;margin-top:.4rem;padding-top:.7rem;border-top:1px solid var(--border-soft);}
 .card-actions button{background:none;border:none;cursor:pointer;font-size:.76rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;padding:0;}
