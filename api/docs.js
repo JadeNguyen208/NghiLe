@@ -13,13 +13,14 @@ module.exports = async (req, res) => {
   if (req.method === 'POST') {
     if (!checkPin(req)) return res.status(401).json({ error: 'Sai mã chỉnh sửa. Vui lòng nhập đúng mã để thêm/sửa/xóa.' });
     const body = await readJsonBody(req);
-    const { tieuDe, chuDe, link, ngayCapNhat } = body || {};
+    const { tieuDe, chuDe, link, noiDung, ngayCapNhat } = body || {};
     if (!tieuDe || !chuDe) return res.status(400).json({ error: 'Thiếu tiêu đề hoặc chủ đề' });
     const row = {
       id: 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       tieu_de: String(tieuDe),
       chu_de: String(chuDe),
       link: String(link || ''),
+      noi_dung: String(noiDung || ''),
       ngay_cap_nhat: ngayCapNhat || new Date().toISOString()
     };
     const { data, error } = await supabase.from('docs').insert(row).select().single();

@@ -8,11 +8,12 @@ module.exports = async (req, res) => {
   if (req.method === 'PUT') {
     if (!checkPin(req)) return res.status(401).json({ error: 'Sai mã chỉnh sửa. Vui lòng nhập đúng mã để thêm/sửa/xóa.' });
     const body = await readJsonBody(req);
-    const { tieuDe, chuDe, link, ngayCapNhat } = body || {};
+    const { tieuDe, chuDe, link, noiDung, ngayCapNhat } = body || {};
     const update = {};
     if (tieuDe !== undefined) update.tieu_de = String(tieuDe);
     if (chuDe !== undefined) update.chu_de = String(chuDe);
     if (link !== undefined) update.link = String(link);
+    if (noiDung !== undefined) update.noi_dung = String(noiDung);
     if (ngayCapNhat !== undefined) update.ngay_cap_nhat = ngayCapNhat;
     const { data, error } = await supabase.from('docs').update(update).eq('id', id).select().single();
     if (error) return res.status(500).json({ error: error.message });

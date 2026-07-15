@@ -62,7 +62,8 @@ let state = {
   historyOpenId: null,
   remFormOpen: false,
   editingDocId: null,
-  docFormOpen: false
+  docFormOpen: false,
+  docContentOpenId: null
 };
 
 function linkify(escapedText){
@@ -488,6 +489,10 @@ function renderDocForm(){
       <input type="text" id="df_link" value="${escapeHtml(editing?.link||'')}" placeholder="https://...">
     </div>
     <div class="field">
+      <label>Nội dung <span class="hint">(tùy chọn — dùng khi muốn lưu hẳn văn bản, không chỉ link)</span></label>
+      <textarea id="df_noiDung" style="min-height:140px;">${escapeHtml(editing?.noiDung||'')}</textarea>
+    </div>
+    <div class="field">
       <label>Ngày cập nhật</label>
       <input type="date" id="df_ngayCapNhat" value="${editing?.ngayCapNhat ? editing.ngayCapNhat.slice(0,10) : new Date().toISOString().slice(0,10)}">
     </div>
@@ -514,16 +519,20 @@ function renderDocs(){
   order.forEach(topic => {
     html += `<div class="topic-header"><h2>${escapeHtml(topic)}</h2><span class="rule"></span><span class="count">${groups[topic].length}</span></div>`;
     groups[topic].forEach(d => {
+      const hasContent = d.noiDung && d.noiDung.trim();
+      const contentOpen = state.docContentOpenId === d.id;
       html += `<div class="doc-row">
         <div class="doc-main">
           ${d.link ? `<a href="${escapeHtml(d.link)}" target="_blank" rel="noopener" class="doc-title">${escapeHtml(d.tieuDe)}</a>` : `<span class="doc-title">${escapeHtml(d.tieuDe)}</span>`}
           <span class="doc-date">${ICONS.calendar} ${formatDate(d.ngayCapNhat)}</span>
         </div>
         <div class="doc-actions">
+          ${hasContent ? `<button class="act-view" data-doccontent="${d.id}">${contentOpen?'Ẩn nội dung':'Xem nội dung'}</button>` : ''}
           <button class="act-edit" data-docedit="${d.id}">${ICONS.edit} Sửa</button>
           <button class="act-delete" data-docdelete="${d.id}">${ICONS.trash} Xóa</button>
         </div>
-      </div>`;
+      </div>
+      ${hasContent && contentOpen ? `<div class="doc-content">${escapeHtml(d.noiDung)}</div>` : ''}`;
     });
   });
   return html;
@@ -706,6 +715,10 @@ function attachTabEvents(){
       state.docFormOpen = true;
       render();
     });
+    document.querySelectorAll('[data-doccontent]').forEach(b => b.onclick = () => {
+      state.docContentOpenId = state.docContentOpenId === b.dataset.doccontent ? null : b.dataset.doccontent;
+      render();
+    });
     const toggleBtn = document.getElementById('docFormToggle');
     if(toggleBtn) toggleBtn.onclick = () => {
       state.docFormOpen = !state.docFormOpen;
@@ -722,11 +735,12 @@ function attachTabEvents(){
         const tieuDe = document.getElementById('df_tieuDe').value.trim();
         const chuDe = document.getElementById('df_chuDe').value;
         const link = document.getElementById('df_link').value.trim();
+        const noiDung = document.getElementById('df_noiDung').value.trim();
         const dateVal = document.getElementById('df_ngayCapNhat').value;
         const msg = document.getElementById('docFormMsg');
         if(!tieuDe || !chuDe){ msg.textContent = 'Cần nhập tiêu đề và chọn chủ đề.'; msg.className = 'form-msg err'; return; }
         const ngayCapNhat = dateVal ? new Date(dateVal).toISOString() : new Date().toISOString();
-        const payload = { tieuDe, chuDe, link, ngayCapNhat };
+        const payload = { tieuDe, chuDe, link, noiDung, ngayCapNhat };
         try{
           if(state.editingDocId){
             await api('/api/docs/'+encodeURIComponent(state.editingDocId), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });

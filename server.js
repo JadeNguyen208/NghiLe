@@ -162,7 +162,7 @@ app.get('/api/docs', (req, res) => {
 });
 
 app.post('/api/docs', requirePin, async (req, res) => {
-  const { tieuDe, chuDe, link, ngayCapNhat } = req.body || {};
+  const { tieuDe, chuDe, link, noiDung, ngayCapNhat } = req.body || {};
   if (!tieuDe || !chuDe) return res.status(400).json({ error: 'Thiếu tiêu đề hoặc chủ đề' });
   const docs = readJson(DOCS_FILE);
   const doc = {
@@ -170,6 +170,7 @@ app.post('/api/docs', requirePin, async (req, res) => {
     tieuDe: String(tieuDe),
     chuDe: String(chuDe),
     link: String(link || ''),
+    noiDung: String(noiDung || ''),
     ngayCapNhat: ngayCapNhat || new Date().toISOString()
   };
   docs.push(doc);
@@ -181,10 +182,11 @@ app.put('/api/docs/:id', requirePin, async (req, res) => {
   const docs = readJson(DOCS_FILE);
   const idx = docs.findIndex(d => d.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Không tìm thấy mục này' });
-  const { tieuDe, chuDe, link, ngayCapNhat } = req.body || {};
+  const { tieuDe, chuDe, link, noiDung, ngayCapNhat } = req.body || {};
   if (tieuDe !== undefined) docs[idx].tieuDe = String(tieuDe);
   if (chuDe !== undefined) docs[idx].chuDe = String(chuDe);
   if (link !== undefined) docs[idx].link = String(link);
+  if (noiDung !== undefined) docs[idx].noiDung = String(noiDung);
   if (ngayCapNhat !== undefined) docs[idx].ngayCapNhat = ngayCapNhat;
   await writeJson(DOCS_FILE, docs);
   res.json(docs[idx]);

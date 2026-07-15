@@ -27,12 +27,14 @@ create table if not exists docs (
   tieu_de text not null,
   chu_de text not null,
   link text default '',
+  noi_dung text default '',
   ngay_cap_nhat timestamptz not null default now()
 );
 
 -- An toàn khi chạy lại script này trên project đã tạo từ trước
 alter table reminders add column if not exists once_date text;
 alter table reminders add column if not exists hoan_thanh_ky text;
+alter table docs add column if not exists noi_dung text default '';
 
 alter table entries enable row level security;
 alter table reminders enable row level security;
