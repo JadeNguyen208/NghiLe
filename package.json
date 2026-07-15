@@ -1,0 +1,12 @@
+{
+  "name": "kho-hoi-dap",
+  "version": "1.0.0",
+  "description": "Kho du lieu hoi dap nghi le - NLCLB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

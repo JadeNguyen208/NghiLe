@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kho Dữ Liệu Nghi Lễ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="brand-icon" aria-hidden="true"><path d="M12 2c1.8 2.4 2.8 4.6 2.8 6.6A2.8 2.8 0 0 1 12 11.4a2.8 2.8 0 0 1-2.8-2.8C9.2 6.6 10.2 4.4 12 2z"/><path d="M5 22c0-4.4 3.1-8 7-8s7 3.6 7 8"/><path d="M12 14v8"/></svg>
+        <div>
+          <div class="brand-title">KHO DỮ LIỆU NGHI LỄ</div>
+        </div>
+      </div>
+
+      <div class="clock-box">
+        <div class="clock-time" id="clockTime">--:--:--</div>
+        <div class="clock-date" id="clockDate">&nbsp;</div>
+        <div class="clock-lunar" id="clockLunar">&nbsp;</div>
+      </div>
+
+      <nav class="side-nav">
+        <button class="side-nav-item active" data-tab="archive">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Kho hỏi đáp</span>
+        </button>
+        <button class="side-nav-item" data-tab="add">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Thêm hỏi đáp mới</span>
+        </button>
+        <button class="side-nav-item" data-tab="assist">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M15 9l-9.2 9.2a1 1 0 0 0 0 1.4l.6.6a1 1 0 0 0 1.4 0L17 12.4M17.8 6.2L19 5"/></svg>
+          <span>Trợ lý tra cứu</span>
+        </button>
+        <button class="side-nav-item" data-tab="reminders">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Nhắc lịch</span>
+        </button>
+      </nav>
+
+      <div class="side-dropdown">
+        <button class="side-dropdown-toggle" id="topicToggle">
+          <span>Chủ đề</span>
+          <svg id="topicChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="side-dropdown-panel" id="topicPanel"></div>
+      </div>
+
+      <div class="side-dropdown">
+        <button class="side-dropdown-toggle" id="calToggle">
+          <span>Lịch âm dương</span>
+          <svg id="calChevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="side-dropdown-panel" id="calPanel"></div>
+      </div>
+
+      <div class="side-lock" id="sideLock">
+        <button class="lock-btn" id="lockBtn">
+          <svg id="lockIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span id="lockLabel">Đã khóa chỉnh sửa</span>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">Dữ liệu lưu chung trên máy chủ &mdash; mọi người truy cập cùng một kho.</div>
+    </aside>
+
+    <main class="main">
+      <div class="main-header">
+        <div class="header-top">
+          <div class="stats" id="statsRow"></div>
+          <div class="export-actions">
+            <a class="export-btn" href="/api/entries-export.csv" download>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Xuất CSV
+            </a>
+            <button class="export-btn" id="printBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              In / Xuất PDF
+            </button>
+          </div>
+        </div>
+        <div class="search-wrap">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" type="text" placeholder="Tìm theo chủ đề, câu hỏi, nội dung hoặc trả lời...">
+        </div>
+      </div>
+      <div id="tabContent"></div>
+    </main>
+  </div>
+
+  <script src="lunar.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
