@@ -15,10 +15,16 @@ create table if not exists reminders (
   day_type text not null,
   lunar_day int,
   special_label text,
+  once_date text,
   noi_dung text not null,
   luu_y text default '',
-  phu_trach text default ''
+  phu_trach text default '',
+  hoan_thanh_ky text
 );
+
+-- An toàn khi chạy lại script này trên project đã tạo từ trước
+alter table reminders add column if not exists once_date text;
+alter table reminders add column if not exists hoan_thanh_ky text;
 
 alter table entries enable row level security;
 alter table reminders enable row level security;

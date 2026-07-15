@@ -58,7 +58,8 @@ let state = {
   topicPanelOpen: false,
   editPin: localStorage.getItem('kho-edit-pin') || null,
   editingReminderId: null,
-  historyOpenId: null
+  historyOpenId: null,
+  remFormOpen: false
 };
 
 function linkify(escapedText){
@@ -144,11 +145,38 @@ function todayLunar(){
   const [ld, lm, ly, leap] = convertSolar2Lunar(now.getDate(), now.getMonth()+1, now.getFullYear(), 7);
   return { ld, lm, ly, leap };
 }
+function todayIso(){
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
 function remindersForLunarDay(day){
-  return state.reminders.filter(r => r.dayType === 'lunar' && r.lunarDay === day);
+  const t = todayIso();
+  return state.reminders.filter(r => (r.dayType === 'lunar' && r.lunarDay === day) || (r.dayType === 'once' && r.onceDate === t));
 }
 function lunarDaysWithReminders(){
   return new Set(state.reminders.filter(r => r.dayType==='lunar').map(r => r.lunarDay));
+}
+function onceDatesWithReminders(){
+  return new Set(state.reminders.filter(r => r.dayType==='once').map(r => r.onceDate));
+}
+function currentCycleKey(){
+  const { lm, ly } = todayLunar();
+  return `${ly}-${lm}`;
+}
+function isReminderDone(r){
+  if(!r.hoanThanhKy) return false;
+  return r.dayType === 'once' ? r.hoanThanhKy === 'done' : r.hoanThanhKy === currentCycleKey();
+}
+async function toggleReminderDone(r){
+  if(!ensureUnlocked()) return;
+  const value = isReminderDone(r) ? null : (r.dayType === 'once' ? 'done' : currentCycleKey());
+  try{
+    await api('/api/reminders/'+encodeURIComponent(r.id), {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ hoanThanhKy: value })
+    });
+    await loadReminders(); render();
+  }catch(err){ alert(err.message); }
 }
 
 function render(){
@@ -319,38 +347,91 @@ function renderAssist(){
   ${resultHtml}`;
 }
 
+function renderNewReminderForm(){
+  if(!state.remFormOpen) return '';
+  return `<form class="entry-form" id="remForm" style="margin-bottom:1.6rem;">
+    <div class="field">
+      <label>Kiểu nhắc *</label>
+      <select id="rf_kind">
+        <option value="lunar">Lặp lại hàng tháng (theo ngày âm)</option>
+        <option value="once">Không lặp lại (một lần, theo ngày cụ thể)</option>
+        <option value="special">Định kỳ khác (mô tả tự do, VD: Thứ bảy hàng tuần)</option>
+      </select>
+    </div>
+    <div class="field" id="rf_lunarField">
+      <label>Ngày âm lịch (1–30)</label>
+      <input type="number" id="rf_lunarDay" min="1" max="30" value="1">
+    </div>
+    <div class="field" id="rf_onceField" style="display:none;">
+      <label>Ngày cụ thể</label>
+      <input type="date" id="rf_onceDate" value="${new Date().toISOString().slice(0,10)}">
+    </div>
+    <div class="field" id="rf_specialField" style="display:none;">
+      <label>Mô tả định kỳ</label>
+      <input type="text" id="rf_specialLabel" placeholder="VD: Chủ nhật hàng tuần">
+    </div>
+    <div class="field">
+      <label>Nội dung *</label>
+      <textarea id="rf_noiDung" required style="min-height:120px;"></textarea>
+    </div>
+    <div class="field">
+      <label>Lưu ý <span class="hint">(tùy chọn)</span></label>
+      <input type="text" id="rf_luuY">
+    </div>
+    <div class="field">
+      <label>Phụ trách <span class="hint">(tùy chọn)</span></label>
+      <input type="text" id="rf_phuTrach" placeholder="VD: ĐH Thoa">
+    </div>
+    <button type="submit" class="btn-primary">Lưu nhắc lịch</button>
+    <button type="button" class="btn-secondary" id="remFormCancel" style="margin-left:10px;">Hủy</button>
+    <div id="remFormMsg" class="form-msg"></div>
+  </form>`;
+}
+
 function renderReminders(){
+  const addToggle = `<div style="margin-bottom:1.2rem;"><button class="btn-secondary" id="remFormToggle">${state.remFormOpen ? 'Đóng biểu mẫu' : '+ Thêm nhắc lịch mới'}</button></div>`;
+  const form = renderNewReminderForm();
+
   if(!state.reminders.length){
-    return `<div class="empty-state"><div class="big">Chưa có nhắc lịch nào</div><div class="small">Nhắc lịch sẽ hiện ở đây theo ngày âm lịch trong tháng.</div></div>`;
+    return addToggle + form + `<div class="empty-state"><div class="big">Chưa có nhắc lịch nào</div><div class="small">Nhắc lịch sẽ hiện ở đây theo ngày âm lịch trong tháng.</div></div>`;
   }
   const { ld } = todayLunar();
+  const t = todayIso();
   const lunarOnes = state.reminders.filter(r => r.dayType === 'lunar').sort((a,b)=>a.lunarDay-b.lunarDay);
   const specialOnes = state.reminders.filter(r => r.dayType === 'special');
-  const allOrdered = lunarOnes.concat(specialOnes);
+  const onceOnes = state.reminders.filter(r => r.dayType === 'once').sort((a,b)=>(a.onceDate||'').localeCompare(b.onceDate||''));
+  const allOrdered = lunarOnes.concat(onceOnes).concat(specialOnes);
 
   const summaryRows = allOrdered.map(r => {
-    const isToday = r.dayType==='lunar' && r.lunarDay===ld;
-    const dayLabel = r.dayType==='lunar' ? String(r.lunarDay) : escapeHtml(r.specialLabel);
+    const isToday = (r.dayType==='lunar' && r.lunarDay===ld) || (r.dayType==='once' && r.onceDate===t);
+    const dayLabel = r.dayType==='lunar' ? String(r.lunarDay) : r.dayType==='once' ? formatDate(r.onceDate) : escapeHtml(r.specialLabel);
+    const done = isReminderDone(r);
     return `<tr class="${isToday?'today-row':''}">
+      <td class="check-col"><input type="checkbox" class="rem-check" data-remcheck="${r.id}" ${done?'checked':''} aria-label="Đánh dấu hoàn thành"></td>
       <td class="day-col">${dayLabel}</td>
-      <td><a class="sheet-link" href="#rem-${r.id}">${escapeHtml(extractTitle(r.noiDung))}</a></td>
+      <td><a class="sheet-link ${done?'done':''}" href="#rem-${r.id}">${escapeHtml(extractTitle(r.noiDung))}</a></td>
       <td>${r.phuTrach ? `<b class="rem-phutrach">${escapeHtml(r.phuTrach)}</b>` : ''}</td>
     </tr>`;
   }).join('');
 
   const summaryTable = `<div class="rem-summary">
     <table class="sheet-table">
-      <thead><tr><th>Ngày</th><th>Tiêu đề</th><th>Phụ trách</th></tr></thead>
+      <thead><tr><th>Xong</th><th>Ngày</th><th>Tiêu đề</th><th>Phụ trách</th></tr></thead>
       <tbody>${summaryRows}</tbody>
     </table>
+    <div class="cal-note" style="padding:8px 14px 12px;">Tick "Xong" tự bỏ khi sang tháng âm mới (mục một lần thì giữ nguyên).</div>
   </div>`;
 
   function card(r){
-    const isToday = r.dayType==='lunar' && r.lunarDay===ld;
+    const isToday = (r.dayType==='lunar' && r.lunarDay===ld) || (r.dayType==='once' && r.onceDate===t);
+    const dayText = r.dayType==='lunar' ? 'Ngày '+r.lunarDay+' âm lịch'+(isToday?' — Hôm nay':'')
+      : r.dayType==='once' ? 'Ngày '+formatDate(r.onceDate)+(isToday?' — Hôm nay':'')
+      : escapeHtml(r.specialLabel);
     return `<div class="rem-card" id="rem-${r.id}" style="${isToday?'border-color:var(--maroon);':''}">
       <div class="rem-meta">
-        <span>${r.dayType==='lunar' ? 'Ngày '+r.lunarDay+' âm lịch'+(isToday?' — Hôm nay':'') : escapeHtml(r.specialLabel)}</span>
+        <span>${dayText}</span>
         ${r.phuTrach ? `<span>Phụ trách: <b class="rem-phutrach">${escapeHtml(r.phuTrach)}</b></span>` : ''}
+        ${isReminderDone(r) ? `<span class="pill ok">${ICONS.check} Đã xong</span>` : ''}
       </div>
       <div class="rem-body">${linkify(escapeHtml(r.noiDung))}</div>
       ${r.luuY ? `<div class="rem-note">${escapeHtml(r.luuY)}</div>` : ''}
@@ -360,13 +441,17 @@ function renderReminders(){
     </div>`;
   }
 
-  let html = summaryTable;
+  let html = addToggle + form + summaryTable;
   const grouped = {};
   lunarOnes.forEach(r => { (grouped[r.lunarDay] = grouped[r.lunarDay]||[]).push(r); });
   Object.keys(grouped).map(Number).sort((a,b)=>a-b).forEach(day => {
     html += `<div class="rem-group-header"><h2>Ngày ${day} âm lịch${day===ld?' — Hôm nay':''}</h2><span class="rule"></span></div>`;
     grouped[day].forEach(r => html += card(r));
   });
+  if(onceOnes.length){
+    html += `<div class="rem-group-header"><h2>Một lần</h2><span class="rule"></span></div>`;
+    onceOnes.forEach(r => html += card(r));
+  }
   if(specialOnes.length){
     html += `<div class="rem-group-header"><h2>Định kỳ khác</h2><span class="rule"></span></div>`;
     specialOnes.forEach(r => html += card(r));
@@ -477,6 +562,49 @@ function attachTabEvents(){
         await loadReminders(); render();
       }catch(err){ alert(err.message); }
     });
+    document.querySelectorAll('[data-remcheck]').forEach(cb => cb.onchange = () => {
+      const r = state.reminders.find(x => x.id === cb.dataset.remcheck);
+      if(r) toggleReminderDone(r); else render();
+    });
+    const toggleBtn = document.getElementById('remFormToggle');
+    if(toggleBtn) toggleBtn.onclick = () => { state.remFormOpen = !state.remFormOpen; render(); };
+    const kindSel = document.getElementById('rf_kind');
+    if(kindSel){
+      const syncFields = () => {
+        document.getElementById('rf_lunarField').style.display = kindSel.value==='lunar' ? '' : 'none';
+        document.getElementById('rf_onceField').style.display = kindSel.value==='once' ? '' : 'none';
+        document.getElementById('rf_specialField').style.display = kindSel.value==='special' ? '' : 'none';
+      };
+      kindSel.onchange = syncFields;
+      syncFields();
+    }
+    const cancelBtn = document.getElementById('remFormCancel');
+    if(cancelBtn) cancelBtn.onclick = () => { state.remFormOpen = false; render(); };
+    const remForm = document.getElementById('remForm');
+    if(remForm){
+      remForm.onsubmit = async (ev) => {
+        ev.preventDefault();
+        if(!ensureUnlocked()) return;
+        const kind = document.getElementById('rf_kind').value;
+        const noiDung = document.getElementById('rf_noiDung').value.trim();
+        const luuY = document.getElementById('rf_luuY').value.trim();
+        const phuTrach = document.getElementById('rf_phuTrach').value.trim();
+        const msg = document.getElementById('remFormMsg');
+        if(!noiDung){ msg.textContent = 'Cần nhập nội dung.'; msg.className = 'form-msg err'; return; }
+        const payload = { dayType: kind, noiDung, luuY, phuTrach };
+        if(kind === 'lunar') payload.lunarDay = Number(document.getElementById('rf_lunarDay').value);
+        if(kind === 'once') payload.onceDate = document.getElementById('rf_onceDate').value;
+        if(kind === 'special') payload.specialLabel = document.getElementById('rf_specialLabel').value.trim();
+        try{
+          await api('/api/reminders', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+          state.remFormOpen = false;
+          await loadReminders(); render();
+        }catch(err){
+          msg.textContent = 'Lỗi: ' + err.message;
+          msg.className = 'form-msg err';
+        }
+      };
+    }
   }
 }
 
@@ -507,7 +635,8 @@ function buildCalendarGrid(year, month){
   for(let d=1; d<=daysInMonth; d++){
     const [ld, lm, ly, leap] = convertSolar2Lunar(d, month+1, year, 7);
     const isToday = today.getFullYear()===year && today.getMonth()===month && today.getDate()===d;
-    const hasRem = lunarDaysWithReminders().has(ld);
+    const isoDate = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasRem = lunarDaysWithReminders().has(ld) || onceDatesWithReminders().has(isoDate);
     cells.push({ day:d, ld, lm, ly, leap, isToday, isSoc: ld===1, isVong: ld===15, hasRem });
   }
   return cells;

@@ -110,7 +110,7 @@ app.get('/api/reminders', (req, res) => {
 });
 
 app.post('/api/reminders', requirePin, async (req, res) => {
-  const { dayType, lunarDay, specialLabel, noiDung, luuY, phuTrach } = req.body || {};
+  const { dayType, lunarDay, specialLabel, onceDate, noiDung, luuY, phuTrach } = req.body || {};
   if (!dayType || !noiDung) return res.status(400).json({ error: 'Thiếu loại ngày hoặc nội dung' });
   const reminders = readJson(REMINDERS_FILE);
   const reminder = {
@@ -118,9 +118,11 @@ app.post('/api/reminders', requirePin, async (req, res) => {
     dayType: String(dayType),
     lunarDay: dayType === 'lunar' ? Number(lunarDay) : null,
     specialLabel: dayType === 'special' ? String(specialLabel || '') : null,
+    onceDate: dayType === 'once' ? String(onceDate || '') : null,
     noiDung: String(noiDung),
     luuY: String(luuY || ''),
-    phuTrach: String(phuTrach || '')
+    phuTrach: String(phuTrach || ''),
+    hoanThanhKy: null
   };
   reminders.push(reminder);
   await writeJson(REMINDERS_FILE, reminders);
@@ -131,13 +133,15 @@ app.put('/api/reminders/:id', requirePin, async (req, res) => {
   const reminders = readJson(REMINDERS_FILE);
   const idx = reminders.findIndex(r => r.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Không tìm thấy mục này' });
-  const { dayType, lunarDay, specialLabel, noiDung, luuY, phuTrach } = req.body || {};
+  const { dayType, lunarDay, specialLabel, onceDate, noiDung, luuY, phuTrach, hoanThanhKy } = req.body || {};
   if (dayType !== undefined) reminders[idx].dayType = String(dayType);
   if (lunarDay !== undefined) reminders[idx].lunarDay = lunarDay === null ? null : Number(lunarDay);
   if (specialLabel !== undefined) reminders[idx].specialLabel = specialLabel;
+  if (onceDate !== undefined) reminders[idx].onceDate = onceDate;
   if (noiDung !== undefined) reminders[idx].noiDung = String(noiDung);
   if (luuY !== undefined) reminders[idx].luuY = String(luuY);
   if (phuTrach !== undefined) reminders[idx].phuTrach = String(phuTrach);
+  if (hoanThanhKy !== undefined) reminders[idx].hoanThanhKy = hoanThanhKy;
   await writeJson(REMINDERS_FILE, reminders);
   res.json(reminders[idx]);
 });

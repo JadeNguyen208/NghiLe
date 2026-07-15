@@ -248,8 +248,11 @@ form.entry-form{background:var(--surface);border:1px solid var(--border);border-
 .sheet-table tbody tr:hover td{background:var(--surface-alt);}
 .sheet-table tr.today-row td{background:var(--maroon-tint);}
 .sheet-table td.day-col{font-variant-numeric:tabular-nums;font-weight:700;color:var(--maroon);white-space:nowrap;width:64px;}
+.sheet-table td.check-col{width:40px;text-align:center;}
+.rem-check{width:16px;height:16px;cursor:pointer;accent-color:var(--maroon);}
 .sheet-table a.sheet-link{color:var(--ink);text-decoration:none;}
 .sheet-table a.sheet-link:hover{color:var(--maroon);text-decoration:underline;}
+.sheet-table a.sheet-link.done{color:var(--ink-faint);text-decoration:line-through;}
 .rem-phutrach{color:var(--maroon);font-weight:700;}
 
 .rem-group-header{display:flex;align-items:baseline;gap:.6rem;margin:1.7rem 0 .8rem;}

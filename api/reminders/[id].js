@@ -8,14 +8,16 @@ module.exports = async (req, res) => {
   if (req.method === 'PUT') {
     if (!checkPin(req)) return res.status(401).json({ error: 'Sai mã chỉnh sửa. Vui lòng nhập đúng mã để thêm/sửa/xóa.' });
     const body = await readJsonBody(req);
-    const { dayType, lunarDay, specialLabel, noiDung, luuY, phuTrach } = body || {};
+    const { dayType, lunarDay, specialLabel, onceDate, noiDung, luuY, phuTrach, hoanThanhKy } = body || {};
     const update = {};
     if (dayType !== undefined) update.day_type = String(dayType);
     if (lunarDay !== undefined) update.lunar_day = lunarDay === null ? null : Number(lunarDay);
     if (specialLabel !== undefined) update.special_label = specialLabel;
+    if (onceDate !== undefined) update.once_date = onceDate;
     if (noiDung !== undefined) update.noi_dung = String(noiDung);
     if (luuY !== undefined) update.luu_y = String(luuY);
     if (phuTrach !== undefined) update.phu_trach = String(phuTrach);
+    if (hoanThanhKy !== undefined) update.hoan_thanh_ky = hoanThanhKy;
     const { data, error } = await supabase.from('reminders').update(update).eq('id', id).select().single();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: 'Không tìm thấy mục này' });
