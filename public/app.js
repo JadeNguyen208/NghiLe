@@ -47,6 +47,7 @@ const TOPICS = [
 let state = {
   entries: [],
   reminders: [],
+  docs: [],
   tab: 'archive',
   query: '',
   activeTopic: null,
@@ -59,7 +60,9 @@ let state = {
   editPin: localStorage.getItem('kho-edit-pin') || null,
   editingReminderId: null,
   historyOpenId: null,
-  remFormOpen: false
+  remFormOpen: false,
+  editingDocId: null,
+  docFormOpen: false
 };
 
 function linkify(escapedText){
@@ -84,6 +87,7 @@ async function api(path, opts){
 }
 async function loadEntries(){ state.entries = await api('/api/entries'); }
 async function loadReminders(){ state.reminders = await api('/api/reminders'); }
+async function loadDocs(){ state.docs = await api('/api/docs'); }
 
 function ensureUnlocked(){
   if(state.editPin) return true;
@@ -195,6 +199,7 @@ function render(){
   if(state.tab==='archive') el.innerHTML = renderArchive();
   else if(state.tab==='add') el.innerHTML = renderAddForm();
   else if(state.tab==='reminders') el.innerHTML = renderReminders();
+  else if(state.tab==='docs') el.innerHTML = renderDocs();
   else el.innerHTML = renderAssist();
   attachTabEvents();
 }
@@ -349,40 +354,43 @@ function renderAssist(){
 
 function renderNewReminderForm(){
   if(!state.remFormOpen) return '';
+  const editing = state.editingReminderId ? state.reminders.find(r => r.id === state.editingReminderId) : null;
+  const kind = editing ? editing.dayType : 'lunar';
   return `<form class="entry-form" id="remForm" style="margin-bottom:1.6rem;">
+    ${editing ? `<div class="form-msg" style="margin:0 0 1rem;color:var(--ink-soft);">Đang chỉnh sửa mục đã lưu</div>` : ''}
     <div class="field">
       <label>Kiểu nhắc *</label>
       <select id="rf_kind">
-        <option value="lunar">Lặp lại hàng tháng (theo ngày âm)</option>
-        <option value="once">Không lặp lại (một lần, theo ngày cụ thể)</option>
-        <option value="special">Định kỳ khác (mô tả tự do, VD: Thứ bảy hàng tuần)</option>
+        <option value="lunar" ${kind==='lunar'?'selected':''}>Lặp lại hàng tháng (theo ngày âm)</option>
+        <option value="once" ${kind==='once'?'selected':''}>Không lặp lại (một lần, theo ngày cụ thể)</option>
+        <option value="special" ${kind==='special'?'selected':''}>Định kỳ khác (mô tả tự do, VD: Thứ bảy hàng tuần)</option>
       </select>
     </div>
     <div class="field" id="rf_lunarField">
       <label>Ngày âm lịch (1–30)</label>
-      <input type="number" id="rf_lunarDay" min="1" max="30" value="1">
+      <input type="number" id="rf_lunarDay" min="1" max="30" value="${editing?.lunarDay || 1}">
     </div>
     <div class="field" id="rf_onceField" style="display:none;">
       <label>Ngày cụ thể</label>
-      <input type="date" id="rf_onceDate" value="${new Date().toISOString().slice(0,10)}">
+      <input type="date" id="rf_onceDate" value="${editing?.onceDate || new Date().toISOString().slice(0,10)}">
     </div>
     <div class="field" id="rf_specialField" style="display:none;">
       <label>Mô tả định kỳ</label>
-      <input type="text" id="rf_specialLabel" placeholder="VD: Chủ nhật hàng tuần">
+      <input type="text" id="rf_specialLabel" placeholder="VD: Chủ nhật hàng tuần" value="${escapeHtml(editing?.specialLabel||'')}">
     </div>
     <div class="field">
       <label>Nội dung *</label>
-      <textarea id="rf_noiDung" required style="min-height:120px;"></textarea>
+      <textarea id="rf_noiDung" required style="min-height:120px;">${escapeHtml(editing?.noiDung||'')}</textarea>
     </div>
     <div class="field">
       <label>Lưu ý <span class="hint">(tùy chọn)</span></label>
-      <input type="text" id="rf_luuY">
+      <input type="text" id="rf_luuY" value="${escapeHtml(editing?.luuY||'')}">
     </div>
     <div class="field">
       <label>Phụ trách <span class="hint">(tùy chọn)</span></label>
-      <input type="text" id="rf_phuTrach" placeholder="VD: ĐH Thoa">
+      <input type="text" id="rf_phuTrach" placeholder="VD: ĐH Thoa" value="${escapeHtml(editing?.phuTrach||'')}">
     </div>
-    <button type="submit" class="btn-primary">Lưu nhắc lịch</button>
+    <button type="submit" class="btn-primary">${editing?'Lưu thay đổi':'Lưu nhắc lịch'}</button>
     <button type="button" class="btn-secondary" id="remFormCancel" style="margin-left:10px;">Hủy</button>
     <div id="remFormMsg" class="form-msg"></div>
   </form>`;
@@ -436,6 +444,7 @@ function renderReminders(){
       <div class="rem-body">${linkify(escapeHtml(r.noiDung))}</div>
       ${r.luuY ? `<div class="rem-note">${escapeHtml(r.luuY)}</div>` : ''}
       <div class="rem-actions">
+        <button class="edit" data-remedit="${r.id}">${ICONS.edit} Sửa</button>
         <button class="del" data-remdelete="${r.id}">${ICONS.trash} Xóa</button>
       </div>
     </div>`;
@@ -456,6 +465,67 @@ function renderReminders(){
     html += `<div class="rem-group-header"><h2>Định kỳ khác</h2><span class="rule"></span></div>`;
     specialOnes.forEach(r => html += card(r));
   }
+  return html;
+}
+
+function renderDocForm(){
+  if(!state.docFormOpen) return '';
+  const editing = state.editingDocId ? state.docs.find(d => d.id === state.editingDocId) : null;
+  return `<form class="entry-form" id="docForm" style="margin-bottom:1.6rem;">
+    ${editing ? `<div class="form-msg" style="margin:0 0 1rem;color:var(--ink-soft);">Đang chỉnh sửa mục đã lưu</div>` : ''}
+    <div class="field">
+      <label>Tiêu đề *</label>
+      <input type="text" id="df_tieuDe" required value="${escapeHtml(editing?.tieuDe||'')}">
+    </div>
+    <div class="field">
+      <label>Chủ đề *</label>
+      <select id="df_chuDe" required>
+        ${TOPICS.map(t => `<option value="${escapeHtml(t)}" ${editing&&editing.chuDe===t?'selected':''}>${escapeHtml(t)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Link <span class="hint">(tùy chọn)</span></label>
+      <input type="text" id="df_link" value="${escapeHtml(editing?.link||'')}" placeholder="https://...">
+    </div>
+    <div class="field">
+      <label>Ngày cập nhật</label>
+      <input type="date" id="df_ngayCapNhat" value="${editing?.ngayCapNhat ? editing.ngayCapNhat.slice(0,10) : new Date().toISOString().slice(0,10)}">
+    </div>
+    <button type="submit" class="btn-primary">${editing?'Lưu thay đổi':'Lưu tài liệu'}</button>
+    <button type="button" class="btn-secondary" id="docFormCancel" style="margin-left:10px;">Hủy</button>
+    <div id="docFormMsg" class="form-msg"></div>
+  </form>`;
+}
+
+function renderDocs(){
+  const addToggle = `<div style="margin-bottom:1.2rem;"><button class="btn-secondary" id="docFormToggle">${state.docFormOpen ? 'Đóng biểu mẫu' : '+ Thêm tài liệu mới'}</button></div>`;
+  const form = renderDocForm();
+
+  if(!state.docs.length){
+    return addToggle + form + `<div class="empty-state"><div class="big">Chưa có tài liệu nào</div><div class="small">Thêm link/tài liệu tham khảo theo chủ đề để dễ tra cứu sau này.</div></div>`;
+  }
+
+  const groups = {};
+  state.docs.forEach(d => { const k = d.chuDe || '(Chưa phân loại)'; (groups[k] = groups[k]||[]).push(d); });
+  Object.keys(groups).forEach(k => groups[k].sort((a,b)=> new Date(b.ngayCapNhat)-new Date(a.ngayCapNhat)));
+  const order = TOPICS.filter(t => groups[t]).concat(Object.keys(groups).filter(k => !TOPICS.includes(k)));
+
+  let html = addToggle + form;
+  order.forEach(topic => {
+    html += `<div class="topic-header"><h2>${escapeHtml(topic)}</h2><span class="rule"></span><span class="count">${groups[topic].length}</span></div>`;
+    groups[topic].forEach(d => {
+      html += `<div class="doc-row">
+        <div class="doc-main">
+          ${d.link ? `<a href="${escapeHtml(d.link)}" target="_blank" rel="noopener" class="doc-title">${escapeHtml(d.tieuDe)}</a>` : `<span class="doc-title">${escapeHtml(d.tieuDe)}</span>`}
+          <span class="doc-date">${ICONS.calendar} ${formatDate(d.ngayCapNhat)}</span>
+        </div>
+        <div class="doc-actions">
+          <button class="act-edit" data-docedit="${d.id}">${ICONS.edit} Sửa</button>
+          <button class="act-delete" data-docdelete="${d.id}">${ICONS.trash} Xóa</button>
+        </div>
+      </div>`;
+    });
+  });
   return html;
 }
 
@@ -562,12 +632,22 @@ function attachTabEvents(){
         await loadReminders(); render();
       }catch(err){ alert(err.message); }
     });
+    document.querySelectorAll('[data-remedit]').forEach(b => b.onclick = () => {
+      if(!ensureUnlocked()) return;
+      state.editingReminderId = b.dataset.remedit;
+      state.remFormOpen = true;
+      render();
+    });
     document.querySelectorAll('[data-remcheck]').forEach(cb => cb.onchange = () => {
       const r = state.reminders.find(x => x.id === cb.dataset.remcheck);
       if(r) toggleReminderDone(r); else render();
     });
     const toggleBtn = document.getElementById('remFormToggle');
-    if(toggleBtn) toggleBtn.onclick = () => { state.remFormOpen = !state.remFormOpen; render(); };
+    if(toggleBtn) toggleBtn.onclick = () => {
+      state.remFormOpen = !state.remFormOpen;
+      state.editingReminderId = null;
+      render();
+    };
     const kindSel = document.getElementById('rf_kind');
     if(kindSel){
       const syncFields = () => {
@@ -579,7 +659,7 @@ function attachTabEvents(){
       syncFields();
     }
     const cancelBtn = document.getElementById('remFormCancel');
-    if(cancelBtn) cancelBtn.onclick = () => { state.remFormOpen = false; render(); };
+    if(cancelBtn) cancelBtn.onclick = () => { state.remFormOpen = false; state.editingReminderId = null; render(); };
     const remForm = document.getElementById('remForm');
     if(remForm){
       remForm.onsubmit = async (ev) => {
@@ -596,9 +676,66 @@ function attachTabEvents(){
         if(kind === 'once') payload.onceDate = document.getElementById('rf_onceDate').value;
         if(kind === 'special') payload.specialLabel = document.getElementById('rf_specialLabel').value.trim();
         try{
-          await api('/api/reminders', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+          if(state.editingReminderId){
+            await api('/api/reminders/'+encodeURIComponent(state.editingReminderId), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            state.editingReminderId = null;
+          }else{
+            await api('/api/reminders', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+          }
           state.remFormOpen = false;
           await loadReminders(); render();
+        }catch(err){
+          msg.textContent = 'Lỗi: ' + err.message;
+          msg.className = 'form-msg err';
+        }
+      };
+    }
+  }
+  if(state.tab==='docs'){
+    document.querySelectorAll('[data-docdelete]').forEach(b => b.onclick = async () => {
+      if(!ensureUnlocked()) return;
+      if(!confirm('Xóa tài liệu này?')) return;
+      try{
+        await api('/api/docs/'+encodeURIComponent(b.dataset.docdelete), { method:'DELETE' });
+        await loadDocs(); render();
+      }catch(err){ alert(err.message); }
+    });
+    document.querySelectorAll('[data-docedit]').forEach(b => b.onclick = () => {
+      if(!ensureUnlocked()) return;
+      state.editingDocId = b.dataset.docedit;
+      state.docFormOpen = true;
+      render();
+    });
+    const toggleBtn = document.getElementById('docFormToggle');
+    if(toggleBtn) toggleBtn.onclick = () => {
+      state.docFormOpen = !state.docFormOpen;
+      state.editingDocId = null;
+      render();
+    };
+    const cancelBtn = document.getElementById('docFormCancel');
+    if(cancelBtn) cancelBtn.onclick = () => { state.docFormOpen = false; state.editingDocId = null; render(); };
+    const docForm = document.getElementById('docForm');
+    if(docForm){
+      docForm.onsubmit = async (ev) => {
+        ev.preventDefault();
+        if(!ensureUnlocked()) return;
+        const tieuDe = document.getElementById('df_tieuDe').value.trim();
+        const chuDe = document.getElementById('df_chuDe').value;
+        const link = document.getElementById('df_link').value.trim();
+        const dateVal = document.getElementById('df_ngayCapNhat').value;
+        const msg = document.getElementById('docFormMsg');
+        if(!tieuDe || !chuDe){ msg.textContent = 'Cần nhập tiêu đề và chọn chủ đề.'; msg.className = 'form-msg err'; return; }
+        const ngayCapNhat = dateVal ? new Date(dateVal).toISOString() : new Date().toISOString();
+        const payload = { tieuDe, chuDe, link, ngayCapNhat };
+        try{
+          if(state.editingDocId){
+            await api('/api/docs/'+encodeURIComponent(state.editingDocId), { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+            state.editingDocId = null;
+          }else{
+            await api('/api/docs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+          }
+          state.docFormOpen = false;
+          await loadDocs(); render();
         }catch(err){
           msg.textContent = 'Lỗi: ' + err.message;
           msg.className = 'form-msg err';
@@ -709,6 +846,7 @@ updateLockUi();
   try{
     await loadEntries();
     await loadReminders();
+    await loadDocs();
   }catch(e){
     document.getElementById('tabContent').innerHTML = `<div class="empty-state"><div class="big">Không kết nối được máy chủ</div><div class="small">${escapeHtml(e.message)}</div></div>`;
     return;

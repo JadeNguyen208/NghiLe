@@ -22,12 +22,21 @@ create table if not exists reminders (
   hoan_thanh_ky text
 );
 
+create table if not exists docs (
+  id text primary key,
+  tieu_de text not null,
+  chu_de text not null,
+  link text default '',
+  ngay_cap_nhat timestamptz not null default now()
+);
+
 -- An toàn khi chạy lại script này trên project đã tạo từ trước
 alter table reminders add column if not exists once_date text;
 alter table reminders add column if not exists hoan_thanh_ky text;
 
 alter table entries enable row level security;
 alter table reminders enable row level security;
+alter table docs enable row level security;
 
 insert into entries (id, chu_de, cau_hoi, noi_dung, tra_loi, ngay_cap_nhat, link_cap_nhat, history) values ($a$seed_1$a$, $b$CHƯƠNG TRÌNH TU MÙA HẠ$b$, $c$Kính thưa NLCLB, được sự thống nhất của BLD và NLĐT, đh xin gửi câu hỏi ạ.$c$, $d$Nội dung câu hỏi:
 1. Trong chương trình tu Mùa Hạ, 1 chu kỳ sẽ có 2 thời khoá ngồi thiền, theo hướng dẫn của CLB về cách tu bù thì sẽ: "...Ngồi thiền: Không tu bù gộp 2 ngày ngồi thiền vào 1 thời khóa. Được tu bù thời khóa ngồi thiền riêng..."

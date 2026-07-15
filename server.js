@@ -6,6 +6,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
 const REMINDERS_FILE = path.join(__dirname, 'reminders.json');
+const DOCS_FILE = path.join(__dirname, 'docs.json');
 const EDIT_PIN = process.env.EDIT_PIN || 'nghile2026';
 
 app.use(express.json({ limit: '2mb' }));
@@ -151,6 +152,49 @@ app.delete('/api/reminders/:id', requirePin, async (req, res) => {
   const next = reminders.filter(r => r.id !== req.params.id);
   if (next.length === reminders.length) return res.status(404).json({ error: 'Không tìm thấy mục này' });
   await writeJson(REMINDERS_FILE, next);
+  res.json({ ok: true });
+});
+
+// ----- Kho luu tru (docs) -----
+
+app.get('/api/docs', (req, res) => {
+  res.json(readJson(DOCS_FILE));
+});
+
+app.post('/api/docs', requirePin, async (req, res) => {
+  const { tieuDe, chuDe, link, ngayCapNhat } = req.body || {};
+  if (!tieuDe || !chuDe) return res.status(400).json({ error: 'Thiếu tiêu đề hoặc chủ đề' });
+  const docs = readJson(DOCS_FILE);
+  const doc = {
+    id: 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    tieuDe: String(tieuDe),
+    chuDe: String(chuDe),
+    link: String(link || ''),
+    ngayCapNhat: ngayCapNhat || new Date().toISOString()
+  };
+  docs.push(doc);
+  await writeJson(DOCS_FILE, docs);
+  res.status(201).json(doc);
+});
+
+app.put('/api/docs/:id', requirePin, async (req, res) => {
+  const docs = readJson(DOCS_FILE);
+  const idx = docs.findIndex(d => d.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Không tìm thấy mục này' });
+  const { tieuDe, chuDe, link, ngayCapNhat } = req.body || {};
+  if (tieuDe !== undefined) docs[idx].tieuDe = String(tieuDe);
+  if (chuDe !== undefined) docs[idx].chuDe = String(chuDe);
+  if (link !== undefined) docs[idx].link = String(link);
+  if (ngayCapNhat !== undefined) docs[idx].ngayCapNhat = ngayCapNhat;
+  await writeJson(DOCS_FILE, docs);
+  res.json(docs[idx]);
+});
+
+app.delete('/api/docs/:id', requirePin, async (req, res) => {
+  const docs = readJson(DOCS_FILE);
+  const next = docs.filter(d => d.id !== req.params.id);
+  if (next.length === docs.length) return res.status(404).json({ error: 'Không tìm thấy mục này' });
+  await writeJson(DOCS_FILE, next);
   res.json({ ok: true });
 });
 
