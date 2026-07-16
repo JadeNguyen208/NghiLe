@@ -60,6 +60,8 @@ let state = {
   tab: 'archive',
   query: '',
   activeTopic: null,
+  archivePage: 1,
+  archivePageSize: 20,
   editingId: null,
   quickAnswerId: null,
   assistQuery: '',
@@ -173,6 +175,7 @@ function renderSidebarTopics(){
   panel.querySelectorAll('.topic-btn').forEach(b => b.onclick = () => {
     state.activeTopic = state.activeTopic === b.dataset.topic ? null : b.dataset.topic;
     state.tab = 'archive';
+    state.archivePage = 1;
     render();
   });
 }
@@ -250,13 +253,29 @@ function renderTodayBanner(){
   </div>`;
 }
 
+function paginationBar(totalItems){
+  const totalPages = Math.max(1, Math.ceil(totalItems / state.archivePageSize));
+  if(state.archivePage > totalPages) state.archivePage = totalPages;
+  if(totalPages <= 1) return '';
+  const from = (state.archivePage-1)*state.archivePageSize + 1;
+  const to = Math.min(totalItems, state.archivePage*state.archivePageSize);
+  return `<div class="page-bar">
+    <button class="btn-secondary" id="pagePrev" ${state.archivePage<=1?'disabled':''}>‹ Trước</button>
+    <span class="page-info">${from}–${to} / ${totalItems} · Trang ${state.archivePage}/${totalPages}</span>
+    <button class="btn-secondary" id="pageNext" ${state.archivePage>=totalPages?'disabled':''}>Sau ›</button>
+  </div>`;
+}
+
 function renderArchive(){
-  const list = filteredEntries();
+  const fullList = filteredEntries();
   const banner = renderTodayBanner();
-  if(!list.length){
+  if(!fullList.length){
     return banner + `<div class="empty-state"><div class="big">Chưa có hỏi đáp nào khớp</div><div class="small">Thử từ khóa khác, hoặc thêm hỏi đáp mới từ menu bên trái.</div></div>`;
   }
-  let html = banner;
+  const pageBar = paginationBar(fullList.length);
+  const start = (state.archivePage-1)*state.archivePageSize;
+  const list = fullList.slice(start, start + state.archivePageSize);
+  let html = banner + pageBar;
   groupByTopic(list).forEach(g => {
     html += `<div class="topic-header"><h2>${escapeHtml(g.topic)}</h2><span class="rule"></span><span class="count">${g.items.length}</span></div>`;
     g.items.forEach(e => {
@@ -290,7 +309,7 @@ function renderArchive(){
       </div>`;
     });
   });
-  return html;
+  return html + pageBar;
 }
 
 function renderAddForm(){
@@ -572,6 +591,10 @@ function renderDocs(){
 
 function attachTabEvents(){
   if(state.tab==='archive'){
+    const pagePrev = document.getElementById('pagePrev');
+    const pageNext = document.getElementById('pageNext');
+    if(pagePrev) pagePrev.onclick = () => { state.archivePage = Math.max(1, state.archivePage-1); render(); window.scrollTo(0,0); };
+    if(pageNext) pageNext.onclick = () => { state.archivePage = state.archivePage+1; render(); window.scrollTo(0,0); };
     document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => {
       if(!ensureUnlocked()) return;
       state.editingId = b.dataset.edit; state.tab='add'; render();
@@ -792,7 +815,7 @@ function attachTabEvents(){
 }
 
 document.querySelectorAll('.side-nav-item').forEach(b => b.onclick = () => { state.tab = b.dataset.tab; if(b.dataset.tab!=='add') state.editingId=null; render(); });
-document.getElementById('searchInput').oninput = (e) => { state.query = e.target.value; if(state.tab!=='archive'){ state.tab='archive'; } render(); };
+document.getElementById('searchInput').oninput = (e) => { state.query = e.target.value; state.archivePage = 1; if(state.tab!=='archive'){ state.tab='archive'; } render(); };
 
 const topicToggle = document.getElementById('topicToggle');
 const topicPanel = document.getElementById('topicPanel');

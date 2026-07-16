@@ -185,6 +185,10 @@ mark.hl{background:var(--gold);color:var(--maroon-deep);border-radius:3px;paddin
 .quick-answer textarea{width:100%;min-height:84px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:.86rem;background:var(--surface);color:var(--ink);resize:vertical;}
 .quick-answer .qa-actions{margin-top:.6rem;display:flex;gap:10px;}
 
+.page-bar{display:flex;align-items:center;justify-content:center;gap:1rem;margin:1rem 0 1.4rem;}
+.page-bar .page-info{font-size:.78rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+.page-bar button:disabled{opacity:.4;cursor:default;}
+
 .empty-state{text-align:center;padding:3.2rem 1rem;color:var(--ink-soft);}
 .empty-state .big{font-weight:700;font-size:1.05rem;color:var(--ink);margin-bottom:.4rem;}
 .empty-state .small{font-size:.83rem;}
