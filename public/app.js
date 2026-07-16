@@ -49,6 +49,7 @@ const TOPICS = [
   'NGHI THỨC AN VỊ LÔ HƯƠNG, TƯỢNG PHẬT/KHÁNH TREO XE; GIẢI BÙA CHÚ, NƠI THỜ TÀ KIẾN',
   'BÀI CÚNG CÁC LỄ THÔNG DỤNG, CÁC VĂN BẠCH',
   'CÁC PHÁT NGUYỆN: TU LỤC HÒA, BẠCH 49 NGÀY, BẠCH 108 NGÀY HỒI HƯỚNG CHO CHÚNG SINH',
+  'THỰC HÀNH CÁC PHÁT NGUYỆN TU/ HÁT TÁN DƯƠNG - ĐĂNG KÝ HỒI HƯỚNG TẠI ĐẠO TRÀNG, CÂU LẠC BỘ',
   'CÁC VẤN ĐỀ KHÁC'
 ];
 
