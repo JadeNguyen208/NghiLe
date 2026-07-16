@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'data.json');
 const REMINDERS_FILE = path.join(__dirname, 'reminders.json');
 const DOCS_FILE = path.join(__dirname, 'docs.json');
-const EDIT_PIN = process.env.EDIT_PIN || 'nghile2026';
+const EDIT_PIN = process.env.EDIT_PIN || '010203';
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -40,6 +40,12 @@ function requirePin(req, res, next) {
 function historyEntry(action, nguoiSua) {
   return { action, at: new Date().toISOString(), nguoiSua: String(nguoiSua || '').trim() || 'Không rõ' };
 }
+
+app.post('/api/verify-pin', (req, res) => {
+  const pin = (req.body && req.body.pin) || req.get('x-edit-pin');
+  if (pin === EDIT_PIN) return res.json({ ok: true });
+  res.status(401).json({ error: 'Sai mã' });
+});
 
 // ----- Hoi dap entries -----
 

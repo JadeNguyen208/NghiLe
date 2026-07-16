@@ -12,7 +12,7 @@
 
 ## Mã khóa chỉnh sửa
 
-Mặc định là `nghile2026` — bất kỳ ai có link đều xem được dữ liệu, nhưng cần đúng mã này mới thêm/sửa/xóa được (hỏi đáp lẫn nhắc lịch). Đổi mã khi deploy thật bằng biến môi trường `EDIT_PIN`. Nhớ đổi mã mặc định trước khi chia sẻ link công khai.
+Mặc định là `010203` — bất kỳ ai có link đều xem được dữ liệu, nhưng cần đúng mã này mới thêm/sửa/xóa được (hỏi đáp, nhắc lịch, kho lưu trữ). Bấm nút khóa ở cuối thanh bên trái, nhập mã để mở; khi mở, chế độ chỉnh sửa **giữ nguyên cho đến khi bạn tự bấm khóa lại** (kể cả khi tải lại trang). Nhập sai mã sẽ báo lỗi ngay. Đổi mã khi deploy thật bằng biến môi trường `EDIT_PIN`. Nhớ đổi mã mặc định trước khi chia sẻ link công khai.
 
 ## Đưa lên Vercel + Supabase (miễn phí, không cần thẻ)
 

@@ -101,19 +101,42 @@ async function loadDocs(){ state.docs = await api('/api/docs'); }
 
 function ensureUnlocked(){
   if(state.editPin) return true;
-  const pin = prompt('Nhập mã chỉnh sửa để thêm/sửa/xóa dữ liệu:');
-  if(!pin) return false;
-  state.editPin = pin;
-  localStorage.setItem('kho-edit-pin', pin);
-  updateLockUi();
-  return true;
+  alert('Chế độ chỉnh sửa đang khóa. Bấm nút khóa ở góc trái (cuối thanh bên) và nhập mã để mở, rồi thử lại.');
+  return false;
+}
+async function toggleLock(){
+  if(state.editPin){
+    state.editPin = null;
+    localStorage.removeItem('kho-edit-pin');
+    updateLockUi();
+    return;
+  }
+  const pin = prompt('Nhập mã để mở khóa chỉnh sửa (mở đến khi bạn tự khóa lại):');
+  if(!pin) return;
+  try{
+    const res = await fetch('/api/verify-pin', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ pin })
+    });
+    if(!res.ok){ alert('Sai mã. Vui lòng thử lại.'); return; }
+    state.editPin = pin;
+    localStorage.setItem('kho-edit-pin', pin);
+    updateLockUi();
+  }catch(e){
+    alert('Không kết nối được máy chủ để kiểm tra mã. Thử lại sau.');
+  }
 }
 function updateLockUi(){
   const btn = document.getElementById('lockBtn');
   const label = document.getElementById('lockLabel');
+  const icon = document.getElementById('lockIcon');
   if(!btn) return;
   btn.classList.toggle('unlocked', !!state.editPin);
-  label.textContent = state.editPin ? 'Đã mở khóa chỉnh sửa' : 'Đã khóa chỉnh sửa';
+  label.textContent = state.editPin ? 'Đang mở — bấm để khóa lại' : 'Đã khóa — bấm để mở chỉnh sửa';
+  if(icon){
+    icon.innerHTML = state.editPin
+      ? '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>'
+      : '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
+  }
 }
 
 function getAllTopics(){
@@ -853,20 +876,27 @@ function updateClock(){
 setInterval(updateClock, 1000);
 updateClock();
 
-document.getElementById('lockBtn').onclick = () => {
-  if(state.editPin){
-    state.editPin = null;
-    localStorage.removeItem('kho-edit-pin');
-    updateLockUi();
-  }else{
-    ensureUnlocked();
-  }
-};
+document.getElementById('lockBtn').onclick = () => { toggleLock(); };
 document.getElementById('printBtn').onclick = () => window.print();
 updateLockUi();
 
+async function revalidateStoredPin(){
+  if(!state.editPin) return;
+  try{
+    const res = await fetch('/api/verify-pin', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ pin: state.editPin })
+    });
+    if(!res.ok){
+      state.editPin = null;
+      localStorage.removeItem('kho-edit-pin');
+    }
+  }catch(e){ /* để nguyên nếu không kiểm tra được */ }
+  updateLockUi();
+}
+
 (async function init(){
   try{
+    await revalidateStoredPin();
     await loadEntries();
     await loadReminders();
     await loadDocs();
