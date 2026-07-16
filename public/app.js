@@ -155,6 +155,7 @@ function filteredEntries(){
     const q = normalize(state.query);
     list = list.filter(e => normalize([e.chuDe,e.cauHoi,e.noiDung,e.traLoi].join(' ')).includes(q));
   }
+  list.sort((a,b) => new Date(b.ngayCapNhat) - new Date(a.ngayCapNhat));
   return list;
 }
 function groupByTopic(list){
