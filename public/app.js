@@ -317,10 +317,9 @@ function renderAddForm(){
   return `<form class="entry-form" id="entryForm">
     ${editing ? `<div class="form-msg" style="margin:0 0 1rem;color:var(--ink-soft);">Đang chỉnh sửa mục đã lưu</div>` : ''}
     <div class="field">
-      <label>Chủ đề *</label>
-      <select id="f_chuDe" required>
-        ${TOPICS.map(t => `<option value="${escapeHtml(t)}" ${editing&&editing.chuDe===t?'selected':''}>${escapeHtml(t)}</option>`).join('')}
-      </select>
+      <label>Chủ đề * <span class="hint">(gõ để tìm chủ đề có sẵn, hoặc gõ chủ đề mới)</span></label>
+      <input type="text" id="f_chuDe" required list="topicDatalist" value="${escapeHtml(editing?.chuDe||'')}" placeholder="VD: CHƯƠNG TRÌNH TU MÙA HẠ">
+      <datalist id="topicDatalist">${getAllTopics().map(t => `<option value="${escapeHtml(t)}">`).join('')}</datalist>
     </div>
     <div class="field">
       <label>Câu hỏi <span class="hint">(lời dẫn / thưa gửi, tùy chọn)</span></label>
@@ -530,10 +529,9 @@ function renderDocForm(){
       <input type="text" id="df_tieuDe" required value="${escapeHtml(editing?.tieuDe||'')}">
     </div>
     <div class="field">
-      <label>Chủ đề *</label>
-      <select id="df_chuDe" required>
-        ${TOPICS.map(t => `<option value="${escapeHtml(t)}" ${editing&&editing.chuDe===t?'selected':''}>${escapeHtml(t)}</option>`).join('')}
-      </select>
+      <label>Chủ đề * <span class="hint">(gõ để tìm chủ đề có sẵn, hoặc gõ chủ đề mới)</span></label>
+      <input type="text" id="df_chuDe" required list="topicDatalist" value="${escapeHtml(editing?.chuDe||'')}" placeholder="VD: CÁC VẤN ĐỀ KHÁC">
+      <datalist id="topicDatalist">${getAllTopics().map(t => `<option value="${escapeHtml(t)}">`).join('')}</datalist>
     </div>
     <div class="field">
       <label>Link <span class="hint">(tùy chọn)</span></label>
