@@ -327,3 +327,22 @@ body.readonly #docFormToggle,
 body.readonly .side-nav-item[data-tab="add"]{display:none !important;}
 body.readonly .readonly-note{display:block;}
 .readonly-note{display:none;font-size:.68rem;color:var(--ink-faint);line-height:1.5;padding-top:.5rem;}
+
+/* Man hinh dang nhap xem (chi hien tren ban tinh Firebase) */
+.view-gate{
+  position:fixed;inset:0;z-index:1000;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;
+}
+.view-gate-box{
+  width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:2rem 1.8rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.7rem;
+}
+.view-gate-box svg{color:var(--maroon);}
+.view-gate-title{font-weight:800;font-size:1rem;letter-spacing:.03em;color:var(--maroon);}
+.view-gate-sub{margin:0 0 .4rem;font-size:.82rem;color:var(--ink-soft);}
+.view-gate-box input{
+  width:100%;padding:11px 14px;font-size:1rem;text-align:center;letter-spacing:.15em;
+  border:1px solid var(--border);border-radius:8px;background:var(--surface-alt);color:var(--ink);
+}
+.view-gate-box input:focus{outline:2px solid var(--maroon);outline-offset:1px;}
+.view-gate-box .form-msg{min-height:1.1em;}

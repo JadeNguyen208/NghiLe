@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "kho-du-lieu-nghi-le"
-  }
+  },
+  "targets": {
+    "kho-du-lieu-nghi-le": {
+      "hosting": {
+        "app": [
+          "nl-dulieu"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

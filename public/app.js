@@ -124,6 +124,51 @@ async function loadAllData(){
   }
 }
 
+const VIEW_CODE = '0102023';
+const VIEW_UNLOCK_KEY = 'nl-view-unlocked';
+
+async function detectServerMode(){
+  try{
+    const res = await fetch('/api/entries', { method: 'GET' });
+    return res.ok;
+  }catch(e){ return false; }
+}
+
+async function proceedAfterGate(){
+  try{
+    await loadAllData();
+  }catch(e){
+    document.getElementById('tabContent').innerHTML = `<div class="empty-state"><div class="big">Không kết nối được máy chủ</div><div class="small">${escapeHtml(e.message)}</div></div>`;
+    return;
+  }
+  render();
+}
+
+function showViewGate(){
+  const gate = document.getElementById('viewGate');
+  const layout = document.getElementById('appLayout');
+  gate.style.display = 'flex';
+  layout.style.display = 'none';
+  const form = document.getElementById('viewGateForm');
+  const input = document.getElementById('viewGateInput');
+  const msg = document.getElementById('viewGateMsg');
+  input.focus();
+  form.onsubmit = (ev) => {
+    ev.preventDefault();
+    if(input.value.trim() === VIEW_CODE){
+      localStorage.setItem(VIEW_UNLOCK_KEY, '1');
+      gate.style.display = 'none';
+      layout.style.display = '';
+      proceedAfterGate();
+    }else{
+      msg.textContent = 'Sai mã, vui lòng thử lại.';
+      msg.className = 'form-msg err';
+      input.value = '';
+      input.focus();
+    }
+  };
+}
+
 function ensureUnlocked(){
   if(state.editPin) return true;
   alert('Chế độ chỉnh sửa đang khóa. Bấm nút khóa ở góc trái (cuối thanh bên) và nhập mã để mở, rồi thử lại.');
@@ -958,12 +1003,17 @@ async function revalidateStoredPin(){
 }
 
 (async function init(){
-  try{
+  const isServer = await detectServerMode();
+  if(isServer){
+    // Máy quản trị (server.js đang chạy) — không cần mã xem, vào thẳng.
     await revalidateStoredPin();
-    await loadAllData();
-  }catch(e){
-    document.getElementById('tabContent').innerHTML = `<div class="empty-state"><div class="big">Không kết nối được máy chủ</div><div class="small">${escapeHtml(e.message)}</div></div>`;
+    await proceedAfterGate();
     return;
   }
-  render();
+  // Bản tĩnh công khai — cần đúng mã xem 1 lần cho mỗi trình duyệt.
+  if(localStorage.getItem(VIEW_UNLOCK_KEY) === '1'){
+    await proceedAfterGate();
+    return;
+  }
+  showViewGate();
 })();

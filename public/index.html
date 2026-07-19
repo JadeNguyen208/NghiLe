@@ -10,7 +10,17 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="layout">
+  <div id="viewGate" class="view-gate" style="display:none;">
+    <form class="view-gate-box" id="viewGateForm">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2c1.8 2.4 2.8 4.6 2.8 6.6A2.8 2.8 0 0 1 12 11.4a2.8 2.8 0 0 1-2.8-2.8C9.2 6.6 10.2 4.4 12 2z"/><path d="M5 22c0-4.4 3.1-8 7-8s7 3.6 7 8"/><path d="M12 14v8"/></svg>
+      <div class="view-gate-title">KHO DỮ LIỆU NGHI LỄ</div>
+      <p class="view-gate-sub">Nhập mã để xem kho tra cứu</p>
+      <input type="password" id="viewGateInput" inputmode="numeric" placeholder="Mã truy cập" autocomplete="off">
+      <button type="submit" class="btn-primary" style="width:100%;">Vào xem</button>
+      <div id="viewGateMsg" class="form-msg"></div>
+    </form>
+  </div>
+  <div class="layout" id="appLayout">
     <aside class="sidebar">
       <div class="brand">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="brand-icon" aria-hidden="true"><path d="M12 2c1.8 2.4 2.8 4.6 2.8 6.6A2.8 2.8 0 0 1 12 11.4a2.8 2.8 0 0 1-2.8-2.8C9.2 6.6 10.2 4.4 12 2z"/><path d="M5 22c0-4.4 3.1-8 7-8s7 3.6 7 8"/><path d="M12 14v8"/></svg>
