@@ -1,52 +1,45 @@
 # Kho Dữ Liệu Nghi Lễ
 
-Ứng dụng nội bộ — lưu trữ và tra cứu hỏi đáp nghi lễ theo chủ đề, kèm nhắc lịch theo ngày âm.
+Ứng dụng nội bộ — lưu trữ và tra cứu hỏi đáp nghi lễ theo chủ đề, kèm nhắc lịch theo ngày âm và kho tài liệu.
 
-## Cấu trúc
+## Link tra cứu (đã chạy)
 
-- `public/` — giao diện (HTML/CSS/JS thuần, không cần build)
-- `api/` — serverless functions cho Vercel (`/api/entries`, `/api/reminders`, `/api/entries-export`)
-- `lib/db.js` — kết nối Supabase dùng chung cho các API
-- `supabase-setup.sql` — script tạo bảng + nạp dữ liệu mẫu vào Supabase
-- `server.js` + `data.json` + `reminders.json` — bản chạy local bằng Express (dùng để xem thử trên máy, không dùng khi đã deploy lên Vercel)
+**https://kho-du-lieu-nghi-le.web.app** — gửi link này cho mọi người. Ai mở cũng xem và tìm kiếm được toàn bộ kho, không cần đăng nhập.
 
-## Mã khóa chỉnh sửa
+Bản trên link này là **bản tra cứu (chỉ đọc)**: các nút thêm/sửa/xóa được ẩn đi. Việc nhập dữ liệu làm trên máy quản trị (xem mục dưới), xong chạy 1 lệnh để cập nhật lại link.
 
-Mặc định là `010203` — bất kỳ ai có link đều xem được dữ liệu, nhưng cần đúng mã này mới thêm/sửa/xóa được (hỏi đáp, nhắc lịch, kho lưu trữ). Bấm nút khóa ở cuối thanh bên trái, nhập mã để mở; khi mở, chế độ chỉnh sửa **giữ nguyên cho đến khi bạn tự bấm khóa lại** (kể cả khi tải lại trang). Nhập sai mã sẽ báo lỗi ngay. Đổi mã khi deploy thật bằng biến môi trường `EDIT_PIN`. Nhớ đổi mã mặc định trước khi chia sẻ link công khai.
-
-## Đưa lên Vercel + Supabase (miễn phí, không cần thẻ)
-
-### Bước 1 — Tạo project Supabase (kho dữ liệu chung)
-
-1. Vào [supabase.com](https://supabase.com), đăng nhập bằng GitHub.
-2. Tạo **New project** (đặt tên tùy ý, chọn mật khẩu database — tự lưu lại, không cần gửi cho ai).
-3. Vào **SQL Editor** trong project, dán toàn bộ nội dung file `supabase-setup.sql` rồi bấm **Run**. Lệnh này tạo 2 bảng (`entries`, `reminders`) và nạp sẵn dữ liệu hiện có.
-4. Vào **Settings → API**, ghi lại 2 giá trị:
-   - **Project URL**
-   - **service_role key** (không phải `anon` key — cần quyền ghi)
-
-### Bước 2 — Đưa code lên GitHub
-
-```
-git remote add origin <URL repo GitHub bạn vừa tạo>
-git push -u origin main
-```
-
-### Bước 3 — Deploy trên Vercel
-
-1. Vào [vercel.com](https://vercel.com), đăng nhập bằng GitHub.
-2. **Add New → Project**, chọn repo vừa đẩy lên.
-3. Ở phần **Environment Variables**, thêm:
-   - `SUPABASE_URL` = Project URL ở Bước 1
-   - `SUPABASE_SERVICE_KEY` = service_role key ở Bước 1
-   - `EDIT_PIN` = mã chỉnh sửa riêng của bạn (thay cho mã mặc định)
-4. Bấm **Deploy**. Vercel cấp một URL dạng `https://ten-app.vercel.app` — gửi link này cho mọi người là dùng chung được một kho, dữ liệu lưu thật trên Supabase, không mất khi deploy lại.
-
-## Chạy thử trên máy này (không cần Supabase)
+## Nhập/sửa dữ liệu (trên máy quản trị)
 
 ```
 npm install
 npm start
 ```
 
-Mở `http://localhost:3000` — bản này dùng file `data.json`/`reminders.json` cục bộ, chỉ để xem giao diện, không đồng bộ với bản Vercel.
+Mở `http://localhost:3000`. Bản này có đầy đủ nút thêm/sửa/xóa.
+
+Bấm nút khóa ở cuối thanh bên trái, nhập mã **`010203`** để mở chế độ chỉnh sửa. Khi đã mở, chế độ này **giữ nguyên cho đến khi bạn tự bấm khóa lại** (kể cả khi tải lại trang). Nhập sai mã sẽ báo lỗi ngay.
+
+Đổi mã bằng biến môi trường `EDIT_PIN` nếu cần.
+
+## Cập nhật lại link sau khi nhập dữ liệu
+
+```
+npm run deploy
+```
+
+Lệnh này đóng gói dữ liệu mới nhất rồi đẩy lên Firebase Hosting. Sau khoảng 1 phút, mọi người mở link sẽ thấy nội dung mới.
+
+## Cấu trúc
+
+- `public/` — giao diện (HTML/CSS/JS thuần, không cần build)
+- `server.js` — máy chủ Express chạy trên máy quản trị, cho phép thêm/sửa/xóa
+- `data.json` / `reminders.json` / `docs.json` — kho dữ liệu gốc
+- `build.js` — đóng gói `public/` + dữ liệu thành thư mục `dist/` để đưa lên Firebase
+- `firebase.json`, `.firebaserc` — cấu hình Firebase Hosting (project `kho-du-lieu-nghi-le`)
+- `api/`, `lib/db.js`, `supabase-setup.sql` — phương án Vercel + Supabase (đã chuẩn bị sẵn, hiện chưa dùng)
+
+## Ghi chú kỹ thuật
+
+Giao diện tự nhận biết môi trường: nếu gọi được API của `server.js` thì bật chế độ chỉnh sửa; nếu không (bản tĩnh trên Firebase) thì tự đọc dữ liệu từ `data/*.json` và chuyển sang chế độ chỉ đọc.
+
+Nếu sau này cần cho nhiều người cùng nhập dữ liệu trực tiếp trên link (không phải chỉ máy quản trị), cần chuyển sang phương án có cơ sở dữ liệu trực tuyến — thư mục `api/` và `supabase-setup.sql` đã chuẩn bị sẵn cho việc đó.

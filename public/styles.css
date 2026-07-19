@@ -315,3 +315,15 @@ a.doc-title:hover{color:var(--maroon);text-decoration:underline;}
 @media (max-width:600px){
   .field-row{grid-template-columns:1fr;}
 }
+
+/* Che do chi doc (ban tinh tren Firebase Hosting) */
+body.readonly .card-actions,
+body.readonly .rem-actions,
+body.readonly .doc-actions,
+body.readonly .quick-answer,
+body.readonly .side-lock,
+body.readonly #remFormToggle,
+body.readonly #docFormToggle,
+body.readonly .side-nav-item[data-tab="add"]{display:none !important;}
+body.readonly .readonly-note{display:block;}
+.readonly-note{display:none;font-size:.68rem;color:var(--ink-faint);line-height:1.5;padding-top:.5rem;}

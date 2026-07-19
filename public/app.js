@@ -74,7 +74,8 @@ let state = {
   remFormOpen: false,
   editingDocId: null,
   docFormOpen: false,
-  docContentOpenId: null
+  docContentOpenId: null,
+  readOnly: false
 };
 
 function linkify(escapedText){
@@ -100,6 +101,28 @@ async function api(path, opts){
 async function loadEntries(){ state.entries = await api('/api/entries'); }
 async function loadReminders(){ state.reminders = await api('/api/reminders'); }
 async function loadDocs(){ state.docs = await api('/api/docs'); }
+
+async function fetchStatic(path){
+  const res = await fetch(path);
+  if(!res.ok) throw new Error('Không tải được dữ liệu: ' + path);
+  return res.json();
+}
+
+// Chạy được ở 2 nơi: có máy chủ (máy bạn - sửa được) hoặc bản tĩnh trên Firebase (chỉ đọc).
+async function loadAllData(){
+  try{
+    await loadEntries();
+    await loadReminders();
+    await loadDocs();
+    state.readOnly = false;
+  }catch(e){
+    state.entries = await fetchStatic('data/entries.json');
+    state.reminders = await fetchStatic('data/reminders.json');
+    state.docs = await fetchStatic('data/docs.json');
+    state.readOnly = true;
+    document.body.classList.add('readonly');
+  }
+}
 
 function ensureUnlocked(){
   if(state.editPin) return true;
@@ -900,6 +923,24 @@ updateClock();
 
 document.getElementById('lockBtn').onclick = () => { toggleLock(); };
 document.getElementById('printBtn').onclick = () => window.print();
+
+// Xuat CSV ngay tren trinh duyet -> chay duoc ca ban co may chu lan ban tinh
+document.getElementById('csvBtn').onclick = () => {
+  const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ') + '"';
+  const header = ['Ngày cập nhật','Chủ đề','Câu hỏi','Nội dung','Trả lời','Link'].map(esc).join(',');
+  const rows = state.entries.map(e =>
+    [formatDate(e.ngayCapNhat), e.chuDe, e.cauHoi, e.noiDung, e.traLoi, e.linkCapNhat].map(esc).join(',')
+  );
+  const csv = '﻿' + [header, ...rows].join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'kho-hoi-dap.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 updateLockUi();
 
 async function revalidateStoredPin(){
@@ -919,9 +960,7 @@ async function revalidateStoredPin(){
 (async function init(){
   try{
     await revalidateStoredPin();
-    await loadEntries();
-    await loadReminders();
-    await loadDocs();
+    await loadAllData();
   }catch(e){
     document.getElementById('tabContent').innerHTML = `<div class="empty-state"><div class="big">Không kết nối được máy chủ</div><div class="small">${escapeHtml(e.message)}</div></div>`;
     return;
